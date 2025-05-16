@@ -335,7 +335,7 @@ class TwoLayerNetv3(TwoLayerNetv2):
         # Calculate the derivative of J with respect to W1
         d_z3 = np.dot(scores/N, W2.T)
         one_hot_encoded = d_z3 * (a_2 > 0)
-        grads['W1'] = np.dot(X.T, one_hot_encoded) + 2 * reg * W1
+        grads['W1'] = np.dot(X.T, one_hot_encoded) + 2 * np.multiply(W1, reg)
 
         # Calculate the derivative of J with respect to B1
         grads['b1'] = np.sum(one_hot_encoded, axis=0)
@@ -414,6 +414,18 @@ class TwoLayerNetv4(TwoLayerNetv3):
             # Do not forget to apply the learning_rate                              #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+
+            for params in self.params:
+                self.params[params] = -learning_rate * grads[params] + self.params[params]
+            # v_W1 = -learning_rate * grads['W1']
+            # v_W2 = -learning_rate * grads['W2']
+            # v_b1 = -learning_rate * grads['b1']
+            # v_b2 = -learning_rate * grads['b2']
+
+            # self.params['W1'] = self.params['W1'] + v_W1
+            # self.params['W2'] = self.params['W2'] + v_W2
+            # self.params['b1'] = self.params['b1'] + v_b1
+            # self.params['b2'] = self.params['b2'] + v_b2
 
 
 
