@@ -104,6 +104,8 @@ class TwoLayerNetv1(object):
             sum_exponent = 0
             for column in range(z_3.shape[1]):
                 sum_exponent += np.exp(z_3[row][column])
+                if sum_exponent == 0:
+                    sum_exponent = self.std
             
             for column in range(z_3.shape[1]):
                 z_3[row][column] = np.exp(z_3[row][column]) / sum_exponent
@@ -251,27 +253,6 @@ class TwoLayerNetv3(TwoLayerNetv2):
 
         # Calculate the softmax scores for each element
         scores, a_2 = TwoLayerNetv2.forward(self, X=X)
-        # z_2 = np.dot(X, W1) + b1
-        # for row in range(z_2.shape[0]):
-        #     for column in range(z_2.shape[1]):
-        #         if z_2[row][column] < 0:
-        #             z_2[row][column] = 0
-        #         else:
-        #             continue
-        # z_3 = np.dot(z_2, W2) + b2
-
-        # sum_exponent = 0
-        
-        # for row in range(z_3.shape[0]):
-        #     sum_exponent = 0
-        #     for column in range(z_3.shape[1]):
-        #         sum_exponent += np.exp(z_3[row][column])
-            
-        #     for column in range(z_3.shape[1]):
-        #         z_3[row][column] = np.exp(z_3[row][column]) / sum_exponent
-            
-        # scores = z_3
-
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -328,14 +309,19 @@ class TwoLayerNetv3(TwoLayerNetv2):
         grads['W2'] = np.dot(a_2.T, loss_gradient) + 2 * np.multiply(W2, reg)
 
         # Calculate the derivative of J with respect to B2
-        for row in range(scores.shape[0]):
-            scores[row][y[row]] -= 1
+        scores = scores - delta
         grads['b2'] = np.sum(scores / N, axis=0)
 
         # Calculate the derivative of J with respect to W1
-        d_z3 = np.dot(scores/N, W2.T)
-        one_hot_encoded = d_z3 * (a_2 > 0)
-        grads['W1'] = np.dot(X.T, one_hot_encoded) + 2 * np.multiply(W1, reg)
+        d_z3 = np.dot(scores/N, np.transpose(W2))
+        d_relu = np.zeros(a_2.shape)
+        for row in range(a_2.shape[0]):
+            for column in range(a_2.shape[1]):
+                if a_2[row][column] != 0:
+                    d_relu[row][column] = 1
+
+        one_hot_encoded = np.multiply(d_z3, d_relu)        
+        grads['W1'] = np.dot(np.transpose(X), one_hot_encoded) + (2 * reg * W1)
 
         # Calculate the derivative of J with respect to B1
         grads['b1'] = np.sum(one_hot_encoded, axis=0)
@@ -416,7 +402,7 @@ class TwoLayerNetv4(TwoLayerNetv3):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
             for params in self.params:
-                self.params[params] = -learning_rate * grads[params] + self.params[params]
+                self.params[params] -= learning_rate * grads[params]
             # v_W1 = -learning_rate * grads['W1']
             # v_W2 = -learning_rate * grads['W2']
             # v_b1 = -learning_rate * grads['b1']
@@ -472,7 +458,10 @@ class TwoLayerNetv4(TwoLayerNetv3):
         # TODO: Implement this function; it should be VERY simple!                #
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        
+        scores, a_2 = self.forward(X)
 
+        y_pred = np.argmax(scores, axis=1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
