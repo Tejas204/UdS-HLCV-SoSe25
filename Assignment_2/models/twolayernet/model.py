@@ -34,6 +34,7 @@ class TwoLayerNetv1(object):
         - output_size: The number of classes C.
         """
         np.random.seed(0)
+        self.std = std
         self.params = {}
         self.params['W1'] = std * np.random.randn(input_size, hidden_size)
         self.params['b1'] = np.zeros(hidden_size)
